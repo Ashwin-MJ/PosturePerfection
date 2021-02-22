@@ -18,29 +18,21 @@
 
 #include "inference_core.h"
 #include "posture_in.h"  // Hardcoded image for testing
+#include "pre_processor.h"
 
 #define MODEL_INPUT_X 224
 #define MODEL_INPUT_Y 224
 
 int main(int argc, char const *argv[]) {
-  float preprocessed_image[224 * 224 * 3 + 1];
+  PreProcessing::PreProcessor preprocessor(500, 500, 224, 224);
 
-  int size = MODEL_INPUT_X * MODEL_INPUT_Y;
-  int step = 3;
-
-  for (int i = 0; i < size * step; i += step) {
-    const uint8_t *img = &(image.pixel_data[i]);
-    // Scale to [-1..1]
-    preprocessed_image[i + 0] = img[0] / 127.5 - 1;
-    preprocessed_image[i + 1] = img[1] / 127.5 - 1;
-    preprocessed_image[i + 2] = img[2] / 127.5 - 1;
-  }
+  PreProcessing::PreProcessedImage preprocessed_image =
+      preprocessor.run(image.pixel_data);
 
   Inference::InferenceCore core("models/EfficientPoseRT_LITE.tflite",
                                 MODEL_INPUT_X, MODEL_INPUT_Y);
 
-  Inference::InferenceResults results =
-      core.run(PreProcessing::PreProcessedImage{preprocessed_image});
+  Inference::InferenceResults results = core.run(preprocessed_image);
 
   printf("%f, %f\n", results.head_top.x, results.head_top.y);
   printf("%f, %f\n", results.upper_neck.x, results.upper_neck.y);
