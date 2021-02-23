@@ -16,9 +16,12 @@
  *
  */
 
+#include <iostream>
+
 #include "inference_core.h"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
+#include "opencv2/opencv.hpp"
 #include "posture_in.h"  // Hardcoded image for testing
 #include "pre_processor.h"
 
@@ -54,26 +57,41 @@ void displayImage(cv::Mat originalImage, Inference::InferenceResults results) {
 
   cv::imshow(windowName, originalImage);
 
-  cv::waitKey(0);
-
-  cv::destroyWindow(windowName);
+  cv::waitKey(5);
 }
 
 int main(int argc, char const *argv[]) {
-  // Read in image and resize
-  cv::Mat loadedImage = cv::imread("./person2.jpeg");
+  // Setup the vamera input
+  cv::VideoCapture cap(0);
 
-  // Pass to PreProcessor to normalise and filter
+  if (!cap.isOpened()) {
+    printf("Error opening camera");
+    return 0;
+  }
+
+  // Initialise the PreProcessor and InferenceCore
   PreProcessing::PreProcessor preprocessor(MODEL_INPUT_X, MODEL_INPUT_Y);
-
-  PreProcessing::PreProcessedImage preprocessed_image =
-      preprocessor.run(loadedImage);
-
   Inference::InferenceCore core("models/EfficientPoseRT_LITE.tflite",
                                 MODEL_INPUT_X, MODEL_INPUT_Y);
 
-  Inference::InferenceResults results = core.run(preprocessed_image);
+  // Each frame
+  cv::Mat frame;
 
-  // Display image with detected points
-  displayImage(loadedImage, results);
+  while (1) {
+    // Try to read frame from camera input
+    bool frameSuccess = cap.read(frame);
+
+    if (!frameSuccess) {
+      printf("Unable to get frame");
+      return 0;
+    }
+
+    PreProcessing::PreProcessedImage preprocessed_image =
+        preprocessor.run(frame);
+
+    Inference::InferenceResults results = core.run(preprocessed_image);
+
+    // Display image with detected points
+    displayImage(frame, results);
+  }
 }
