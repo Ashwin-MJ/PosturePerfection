@@ -16,8 +16,6 @@
  *
  */
 
-#include <iostream>
-
 #include "inference_core.h"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
@@ -29,7 +27,7 @@
 #define MODEL_INPUT_Y 224
 
 void displayImage(cv::Mat originalImage, Inference::InferenceResults results) {
-  char *windowName = "Inference Results";
+  std::string windowName = "Inference Results";
 
   cv::namedWindow(windowName);
   cv::Scalar blue(255, 0, 0);
